@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nosey Public</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="game-shell">
+    <canvas id="gameCanvas" aria-label="Nosey Public browser game"></canvas>
+    <section id="splashScreen" class="splash-screen" aria-label="Nosy Public start screen">
+      <div class="splash-art" aria-hidden="true">
+        <span class="splash-eye splash-eye-left"></span>
+        <span class="splash-eye splash-eye-right"></span>
+        <span class="splash-nose"></span>
+      </div>
+      <div class="splash-copy">
+        <p class="splash-kicker">Neighborhood stealth challenge</p>
+        <h1>Nosey Public</h1>
+        <p class="splash-tagline">Stay casual. Watch the watchers. Pick your moment.</p>
+        <button id="startGameButton" class="start-game-button" type="button">Start Game</button>
+      </div>
+    </section>
+    <section class="hud" aria-label="Game controls">
+      <audio id="backgroundMusic" src="assets/Cohabitate.mp3" loop preload="auto"></audio>
+      <audio id="recordVoice" src="assets/new-world-record.m4a" preload="auto"></audio>
+      <div id="startBanner" class="round-banner">PICK A WINNER!</div>
+      <div id="ewReaction" class="ew-reaction">EW!</div>
+      <div class="score-block">
+        <span class="label">Score</span>
+        <strong id="score">0.0</strong>
+      </div>
+      <div class="leaderboard" aria-label="Top 5 high scores">
+        <span class="label">Top 5</span>
+        <ol id="leaderboardList"></ol>
+      </div>
+      <button id="musicToggle" class="music-toggle" type="button" aria-pressed="true">Music On</button>
+      <div id="status" class="status">Stay casual.</div>
+      <button id="pickButton" class="pick-button" type="button">Hold</button>
+    </section>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
