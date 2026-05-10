@@ -11,6 +11,9 @@ const startBanner = document.getElementById("startBanner");
 const ewReaction = document.getElementById("ewReaction");
 const splashScreen = document.getElementById("splashScreen");
 const startGameButton = document.getElementById("startGameButton");
+const nameEntry = document.getElementById("nameEntry");
+const nameEntryForm = document.getElementById("nameEntryForm");
+const playerNameInput = document.getElementById("playerNameInput");
 
 const player = {
   x: 0,
@@ -41,13 +44,16 @@ let width = 0;
 let height = 0;
 let score = 0;
 let highScores = loadHighScores();
-let highScore = highScores[0] || 0;
+let highScore = highScores[0]?.score || 0;
 let isPicking = false;
 let isGameOver = false;
+let isNameEntryOpen = false;
 let lastTime = performance.now();
 let nextAttentionShift = 0;
 let difficulty = 1;
 let pickStartedAt = 0;
+let currentComboMultiplier = 1;
+let pendingScoreEntry = null;
 let audioContext;
 let loseSoundBufferPromise;
 let loseSoundBuffers = [];
@@ -153,6 +159,7 @@ function pointerToCanvas(event) {
 
 function moveTarget(event) {
   if (event) event.preventDefault();
+  if (isNameEntryOpen) return;
   dismissSplash();
   unlockMobileAudio();
   startBackgroundMusic();
@@ -169,6 +176,7 @@ function moveTarget(event) {
 
 function startPicking(event) {
   if (event) event.preventDefault();
+  if (isNameEntryOpen) return;
   if (event && event.pointerId !== undefined) {
     pickPointerId = event.pointerId;
     pickButton.setPointerCapture?.(event.pointerId);
@@ -185,6 +193,7 @@ function startPicking(event) {
   if (isPicking) return;
 
   isPicking = true;
+  currentComboMultiplier = 1;
   pickStartedAt = performance.now();
   pickButton.classList.add("is-picking");
   pickButton.textContent = "Stop";
@@ -211,6 +220,7 @@ function stopPicking(event) {
   if (!isPicking && !slimeTimer) return;
 
   isPicking = false;
+  currentComboMultiplier = 1;
   pickButton.classList.remove("is-picking");
   pickButton.textContent = "Hold";
   if (!isGameOver) statusText.textContent = "Stay casual.";
@@ -218,8 +228,11 @@ function stopPicking(event) {
 }
 
 function restart() {
+  if (isNameEntryOpen) return;
+
   score = 0;
   difficulty = 1;
+  currentComboMultiplier = 1;
   isGameOver = false;
   showStartBanner();
   reactionTextUntil = 0;
@@ -255,7 +268,10 @@ function update(delta) {
     }
 
     if (isPicking) {
-      score += delta;
+      const heldFor = Math.max(0, (now - pickStartedAt) / 1000);
+      currentComboMultiplier = Math.min(5, 1 + heldFor * 0.65);
+      score += delta * currentComboMultiplier;
+      statusText.textContent = `Combo x${currentComboMultiplier.toFixed(1)}`;
       if (beamHitsPlayer()) gameOver();
     }
   }
@@ -265,14 +281,21 @@ function update(delta) {
 
 function gameOver() {
   const beatHighScore = score > highScore;
+  const madeLeaderboard = qualifiesForLeaderboard(score);
 
   isGameOver = true;
   isPicking = false;
+  currentComboMultiplier = 1;
   stopSlimeSounds();
-  addHighScore(score);
   pickButton.classList.remove("is-picking");
   pickButton.textContent = "Retry";
-  statusText.textContent = `Caught! Best: ${highScore.toFixed(1)}`;
+  if (madeLeaderboard) {
+    pendingScoreEntry = { score };
+    openNameEntry();
+  } else {
+    addHighScore(score);
+    statusText.textContent = `Caught! Best: ${highScore.toFixed(1)}`;
+  }
   reactionTextUntil = performance.now() + 1400;
   showEwReaction();
   playCrowdEw();
@@ -286,16 +309,16 @@ function loadHighScores() {
   const oldHighScore = Number(localStorage.getItem("noseyPublicHighScore") || 0);
   const scores = Array.isArray(savedScores) ? savedScores : [];
 
-  if (oldHighScore > 0 && !scores.includes(oldHighScore)) {
-    scores.push(oldHighScore);
+  if (oldHighScore > 0 && !scores.some((entry) => getScoreValue(entry) === oldHighScore)) {
+    scores.push({ name: "---", score: oldHighScore });
   }
 
   return normalizeHighScores(scores);
 }
 
-function addHighScore(newScore) {
-  highScores = normalizeHighScores([...highScores, newScore]);
-  highScore = highScores[0] || 0;
+function addHighScore(newScore, playerName = "---") {
+  highScores = normalizeHighScores([...highScores, { name: cleanPlayerName(playerName), score: newScore }]);
+  highScore = highScores[0]?.score || 0;
   localStorage.setItem("noseyPublicHighScores", JSON.stringify(highScores));
   localStorage.setItem("noseyPublicHighScore", String(highScore));
   renderLeaderboard();
@@ -303,10 +326,29 @@ function addHighScore(newScore) {
 
 function normalizeHighScores(scores) {
   return scores
-    .map(Number)
-    .filter((savedScore) => Number.isFinite(savedScore) && savedScore > 0)
-    .sort((a, b) => b - a)
+    .map((entry) => ({
+      name: cleanPlayerName(typeof entry === "object" ? entry.name : "---"),
+      score: getScoreValue(entry)
+    }))
+    .filter((entry) => Number.isFinite(entry.score) && entry.score > 0)
+    .sort((a, b) => b.score - a.score)
     .slice(0, 5);
+}
+
+function getScoreValue(entry) {
+  return typeof entry === "object" ? Number(entry.score) : Number(entry);
+}
+
+function cleanPlayerName(name) {
+  return String(name || "---")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9 ]/g, "")
+    .slice(0, 8) || "---";
+}
+
+function qualifiesForLeaderboard(newScore) {
+  return highScores.length < 5 || newScore > (highScores[highScores.length - 1]?.score || 0);
 }
 
 function renderLeaderboard() {
@@ -316,9 +358,39 @@ function renderLeaderboard() {
 
   for (let i = 0; i < 5; i += 1) {
     const item = document.createElement("li");
-    item.textContent = highScores[i] ? highScores[i].toFixed(1) : "--";
+    item.textContent = highScores[i] ? `${highScores[i].name} ${highScores[i].score.toFixed(1)}` : "--";
     leaderboardList.appendChild(item);
   }
+}
+
+function openNameEntry() {
+  if (!nameEntry || !playerNameInput) {
+    addHighScore(pendingScoreEntry?.score || score);
+    pendingScoreEntry = null;
+    return;
+  }
+
+  isNameEntryOpen = true;
+  nameEntry.hidden = false;
+  playerNameInput.value = localStorage.getItem("noseyPublicPlayerName") || "PLAYER";
+  window.setTimeout(() => {
+    playerNameInput.focus();
+    playerNameInput.select();
+  }, 50);
+  statusText.textContent = "New Top 5!";
+}
+
+function savePendingScore(event) {
+  event.preventDefault();
+  if (!pendingScoreEntry) return;
+
+  const playerName = cleanPlayerName(playerNameInput?.value || "PLAYER");
+  localStorage.setItem("noseyPublicPlayerName", playerName);
+  addHighScore(pendingScoreEntry.score, playerName);
+  pendingScoreEntry = null;
+  isNameEntryOpen = false;
+  if (nameEntry) nameEntry.hidden = true;
+  statusText.textContent = `Saved! Best: ${highScore.toFixed(1)}`;
 }
 
 function showStartBanner() {
@@ -983,6 +1055,7 @@ pickButton.addEventListener("pointerdown", startPicking);
 pickButton.addEventListener("pointerup", stopPicking);
 pickButton.addEventListener("pointercancel", stopPicking);
 musicToggle.addEventListener("pointerdown", toggleMusic);
+nameEntryForm?.addEventListener("submit", savePendingScore);
 startGameButton?.addEventListener("pointerdown", (event) => {
   event.preventDefault();
   dismissSplash();
@@ -994,6 +1067,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden) stopPicking();
 });
 window.addEventListener("keydown", (event) => {
+  if (isNameEntryOpen) return;
   if (event.code !== "Space" && event.code !== "Enter") return;
 
   event.preventDefault();
