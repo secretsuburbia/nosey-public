@@ -39,6 +39,15 @@
       <div id="status" class="status">Stay casual.</div>
       <button id="pickButton" class="pick-button" type="button">Hold</button>
     </section>
+    <section id="nameEntry" class="name-entry" aria-label="Save high score" hidden>
+      <form id="nameEntryForm" class="name-entry-panel">
+        <p class="name-entry-kicker">Top 5 Score</p>
+        <h2>Claim Your Spot</h2>
+        <label for="playerNameInput">Name</label>
+        <input id="playerNameInput" name="playerName" type="text" inputmode="text" maxlength="8" autocomplete="off" value="PLAYER">
+        <button class="save-score-button" type="submit">Save Score</button>
+      </form>
+    </section>
   </main>
   <script src="game.js"></script>
 </body>
