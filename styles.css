@@ -187,6 +187,81 @@ body {
   transform: translateY(2px);
 }
 
+.name-entry {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(9, 14, 15, 0.68);
+}
+
+.name-entry[hidden] {
+  display: none;
+}
+
+.name-entry-panel {
+  display: grid;
+  gap: 12px;
+  width: min(90vw, 360px);
+  padding: 22px;
+  border: 2px solid rgba(247, 251, 250, 0.82);
+  border-radius: 8px;
+  background: #15211f;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.44);
+  color: #f7fbfa;
+  text-align: center;
+  pointer-events: auto;
+}
+
+.name-entry-kicker {
+  margin: 0;
+  color: #91d94f;
+  font-size: 13px;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+.name-entry h2 {
+  margin: 0 0 4px;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.name-entry label {
+  color: rgba(247, 251, 250, 0.72);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.name-entry input {
+  width: 100%;
+  height: 48px;
+  border: 2px solid rgba(247, 251, 250, 0.72);
+  border-radius: 8px;
+  background: rgba(247, 251, 250, 0.08);
+  color: #f7fbfa;
+  font: inherit;
+  font-size: 22px;
+  font-weight: 1000;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.save-score-button {
+  height: 48px;
+  border: 2px solid #f7fbfa;
+  border-radius: 999px;
+  background: #21a760;
+  color: #f7fbfa;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
 .hud {
   position: absolute;
   inset: 0;
@@ -206,7 +281,7 @@ body {
   left: 50%;
   top: max(12px, env(safe-area-inset-top));
   transform: translateX(-50%);
-  width: min(420px, 48vw);
+  width: min(500px, 52vw);
   min-height: 44px;
   padding: 8px 12px;
   border: 1px solid rgba(247, 251, 250, 0.22);
@@ -221,7 +296,7 @@ body {
 
 .leaderboard ol {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: center;
   margin: 4px 0 0;
   padding: 0;
@@ -229,7 +304,7 @@ body {
 }
 
 .leaderboard li {
-  min-width: 50px;
+  min-width: 76px;
   line-height: 1.15;
   text-align: center;
 }
@@ -404,7 +479,7 @@ body {
 
   .leaderboard {
     top: calc(max(8px, env(safe-area-inset-top)) + 42px);
-    width: min(214px, 54vw);
+    width: min(242px, 62vw);
     min-height: 38px;
     padding: 6px 8px;
     font-size: 11px;
@@ -416,7 +491,8 @@ body {
   }
 
   .leaderboard li {
-    min-width: 34px;
+    min-width: 40px;
+    font-size: 10px;
   }
 
   #score {
